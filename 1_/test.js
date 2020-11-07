@@ -36,7 +36,7 @@ const printLog = (input, output, result) => method => {
 };
 
 const assert = (input, expected) => {
-  const result = solution(input);
+  const result = solution(...input);
 
   if (equal(result, expected)) {
     shouldShowSuccess && printLog(input, expected, result)('log');

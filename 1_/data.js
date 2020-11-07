@@ -3,19 +3,32 @@
 // 
 
 export const input = [
-  1,
-  'test2',
-  { a: 1 },
-  [1,2,3,4,5,6,7]
+  {
+    w: 8,
+    h: 10,
+  },
+  [
+    {
+      w: 2,
+      h: 2,
+    },
+    {
+      w: 5,
+      h: 5,
+    },
+    {
+      w: 16,
+      h: 20
+    },
+    {
+      w: 15,
+      h: 20,
+    }
+  ]
 ]
 
 // 
 // OUTPUT
 // 
 
-export const output = [  
-  1,
-  'test',
-  { a: 1, b: 'c' },
-  [1,2,34,5,6,7]
-]
+export const output = 2;

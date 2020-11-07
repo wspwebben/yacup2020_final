@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Flexbox Sandbox :: Yandex Cup — чемпионат по программированию</title>
+    <meta charset="UTF-8"/>
+    <style>
+        :root {
+            --grid-x: 10px;
+            --grid-2x: 50px;
+            --grid-4x: 100px;
+            --preview-bg: #fefefe;
+        }
+
+        html {
+            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+
+        #app {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        .editor {
+            margin-top: 48px;
+            border-radius: 10px;
+            border: 5px #ffdb4d solid;
+            overflow: hidden;
+        }
+
+        .editor__tabs {
+            display: flex;
+            margin-bottom: 8px;
+            padding: 0 24px;
+            border-bottom: 1px #eee solid;
+        }
+
+        .editor__tab {
+            padding: 12px 16px;
+            border-bottom: 2px transparent solid;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity .25s ease-in-out;
+            opacity: 0.5;
+        }
+
+        .editor__tab:hover {
+            opacity: 1;
+        }
+
+        .editor__tab._active {
+            background-color: #fafafa;
+            pointer-events: none;
+            color: #222;
+            border-color: #ffdb4d;
+            opacity: 1;
+        }
+
+        .editor__tab-extension {
+            display: inline;
+            padding: 3px;
+            background-color: #f2f2f2;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            color: gray;
+        }
+
+        #editor-container {
+            width: 800px;
+            height: 900px;
+        }
+
+        h1 {
+            font-size: 48px;
+            text-align: center;
+        }
+
+        footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 0 32px;
+        }
+
+        .footer__link {
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        .preview {
+            width: 300px;
+            height: 300px;
+            margin: 6px 6px 24px;
+            position: relative;
+            box-shadow: 0 0 0 6px #eee;
+            background: linear-gradient(-90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+            linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+            linear-gradient(-90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+            linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+            linear-gradient(
+                    transparent 3px,
+                    var(--preview-bg) 3px,
+                    var(--preview-bg) calc(var(--grid-4x) - 2px),
+                    transparent calc(var(--grid-4x) - 2px)
+            ),
+            linear-gradient(-90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+            linear-gradient(
+                    -90deg,
+                    transparent 3px,
+                    var(--preview-bg) 3px,
+                    var(--preview-bg) calc(var(--grid-4x) - 2px),
+                    transparent calc(var(--grid-4x) - 2px)
+            ),
+            linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px), var(--preview-bg);
+            background-size: var(--grid-x) var(--grid-x), var(--grid-x) var(--grid-x),
+            var(--grid-2x) var(--grid-2x), var(--grid-2x) var(--grid-2x),
+            var(--grid-4x) var(--grid-4x), var(--grid-4x) var(--grid-4x),
+            var(--grid-4x) var(--grid-4x), var(--grid-4x) var(--grid-4x);
+        }
+
+        main {
+            display: flex;
+            margin-bottom: 32px;
+            padding: 0 24px;
+        }
+
+        .expected,
+        .result {
+            flex: 1 0 0;
+        }
+
+        .output {
+            margin-top: 12px;
+            border-left: 4px #f5f5f5 solid;
+            padding-left: 8px;
+        }
+
+        .expected-element {
+            position: relative;
+            display: flex;
+            box-shadow: inset 0 0 0 1px rgba(126, 63, 242, .85);
+        }
+
+        .result-element {
+            position: absolute;
+            box-shadow: inset 0 0 0 1px rgba(50, 155, 50, .85);
+        }
+
+        .hint {
+            max-width: 600px;
+            margin: 12px auto;
+            text-align: center;
+            font-size: 14px;
+            line-height: 20px;
+            color: #999;
+        }
+
+        .disclaimer {
+            display: flex;
+            margin: 24px 0 48px;
+            padding: 24px;
+            border-radius: 10px;
+            background-color: #ffeaea;
+        }
+
+        .disclaimer-icon {
+            position: relative;
+            margin-right: 20px;
+            font-size: 20px;
+        }
+
+        .disclaimer-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 20px;
+            color: #522;
+        }
+
+        .disclaimer-text p {
+            margin: 0;
+            margin-bottom: 8px;
+        }
+
+        .disclaimer-text ul {
+            margin: 6px 0 12px;
+        }
+    </style>
+</head>
+
+<body>
+<div id="app"></div>
+
+<!-- Monaco Editor -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/loader.min.js"></script>
+<script>
+    require.config({
+        paths: {
+            'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs'
+        }
+    });
+
+    let proxy = URL.createObjectURL(new Blob([`
+            self.MonacoEnvironment = {
+                baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min'
+            };
+            importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/base/worker/workerMain.min.js');
+        `], {type: 'text/javascript'}));
+
+    window.MonacoEnvironment = {getWorkerUrl: () => proxy};
+</script>
+
+<!-- App -->
+<script type="module">
+    import {html, render, nothing} from 'https://unpkg.com/lit-html@latest/lit-html.js';
+    import {classMap} from 'https://unpkg.com/lit-html@latest/directives/class-map.js';
+    import {styleMap} from 'https://unpkg.com/lit-html@latest/directives/style-map.js';
+
+    const codePlaceholder = `
+        // 1) Не забудьте, что код решения обязательно требуется отправить в контест 
+        //    на тестирование для начисления баллов. Все результаты полученные в этой
+        //    песочнице никак не влияют на прохождение задания.
+        // 2) В соседней вкладке вы можете менять входные данные для алгоритма, чтобы
+        //    проверить, как работает ваш алгоритм на различных данных.
+        module.exports = function(root) {
+            // Замените этот пример на код вашего алгоритма, чтобы сравнить
+            // вывод алгоритма с ожидаемым результатом.
+            return [{
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100
+            }];
+        }
+    `;
+
+    const inputPlaceholder = JSON.stringify({
+        "style": {
+            "width": 200,
+            "height": 200,
+            "flexDirection": "column",
+            "alignItems": "center"
+        },
+        "children": [{
+            "style": {
+                "width": 100,
+                "height": 100
+            }
+        }, {
+            "style": {
+                "flexGrow": 1,
+                "width": 60
+            }
+        }]
+    }, null, 4)
+
+    const appEl = document.querySelector('#app');
+    if (!appEl) {
+        throw new Error('Cannot find #app element');
+    }
+
+    const [apply, getState] = (() => {
+        const state = {};
+        return [
+            (patch = {}) => {
+                Object.assign(state, patch);
+                render(App(state), appEl);
+            },
+            () => state
+        ];
+    })();
+
+    function handleTabClick(activeTabId) {
+        const {editor, codeModel, codeModelState, inputModel, inputModelState} = getState();
+
+        const currentState = editor.saveViewState();
+        const currentModel = editor.getModel();
+
+        const patch = {activeTabId};
+        let nextModel;
+        let nextState;
+
+        if (currentModel.id === codeModel.id) {
+            patch.codeModelState = currentState;
+        } else if (currentModel.id === inputModel.id) {
+            patch.inputModelState = currentState;
+        }
+
+        if (activeTabId === codeModel.id) {
+            nextModel = codeModel;
+            nextState = codeModelState;
+        } else if (activeTabId === inputModel.id) {
+            nextModel = inputModel;
+            nextState = inputModelState;
+        }
+
+        editor.setModel(nextModel);
+        editor.restoreViewState(nextState);
+        editor.focus();
+
+        apply(patch);
+    }
+
+
+    /**
+     *  Utils
+     ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+
+    function styles(nodeStyles) {
+        const styles = {...nodeStyles};
+        if (typeof styles.width !== 'undefined') {
+            styles.width = `${styles.width}px`;
+        }
+        if (typeof styles.height !== 'undefined') {
+            styles.height = `${styles.height}px`;
+        }
+        return styleMap(styles);
+    }
+
+    function calcExpectedCoordinates(input) {
+        if (!input) {
+            return 'invalid input object';
+        }
+        const expectedPreviewEl = document.querySelector('.expected .preview .expected-element');
+        if (!expectedPreviewEl) {
+            setTimeout(apply, 100);
+            return 'no expected preview';
+        }
+        const nodes = [expectedPreviewEl];
+        const result = [];
+
+        while (nodes.length) {
+            const node = nodes.shift();
+            if (!node) continue;
+            nodes.push(...node.children);
+            result.push({
+                x: node.offsetLeft,
+                y: node.offsetTop,
+                width: node.clientWidth,
+                height: node.clientHeight
+            });
+        }
+
+        return JSON.stringify(result.sort(sortByCoords), null, 2);
+    }
+
+    function sortByCoords(a, b) {
+        if (a.x === b.x) {
+            if (a.y === b.y) {
+                if (a.width === b.width) {
+                    return b.height - a.height;
+                }
+                return b.width - a.width;
+            }
+            return a.y - b.y;
+        }
+        return a.x - b.x;
+    }
+
+    function getInput(input) {
+        try {
+            return JSON.parse(input)
+        } catch (err) {}
+    }
+
+    function getSolutionResult(input, solutionText) {
+        if (!input) {
+            return 'invalid input object';
+        }
+        try {
+            const solution = new Function('root', `
+                const module = {exports: {}};
+                try {
+                    ${solutionText};
+                    return module.exports(root);
+                } catch(err) {
+                    return err.message;
+                }
+            `);
+            const result = solution(input);
+            return Array.isArray(result) ? result.sort(sortByCoords) : result;
+        } catch (err) {
+            return err.message;
+        }
+    }
+
+    function isValidResult(result) {
+        return Array.isArray(result) && result.length > 0;
+    }
+
+    function geometryToStyles(geometry) {
+        return {
+            top: `${geometry.y}px`,
+            left: `${geometry.x}px`,
+            width: `${geometry.width}px`,
+            height: `${geometry.height}px`
+        };
+    }
+
+
+    /**
+     *  Components
+     ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **/
+
+    const Tab = (props) => html`
+        <div 
+            class="editor__tab ${classMap({_active: props.active})}"
+            @click=${() => handleTabClick(props.id)}
+        >
+            ${props.title}
+            <div class="editor__tab-extension">${props.extension}</div>
+        </div>
+    `;
+
+    const ExpectedElement = (node) => html`
+        <div class="expected-element" style=${styles(node.style)}>
+            ${node.children
+                ? node.children.map(ExpectedElement)
+                : null}
+        </div>
+    `;
+
+    const ResultElement = (geometry) => html`
+            <div
+                class="result-element"
+                style=${styleMap(geometryToStyles(geometry))}
+            />
+        `;
+
+    const Header = () => html`
+        <header>
+            <h1>Flexbox Algorithm Sandbox</h1>
+            <div class="disclaimer">
+                <div class="disclaimer-icon">⚠️</div>
+                <div class="disclaimer-text">
+                    <p>
+                        Данная песочница предоставлена исключительно в ознакомительных целях, чтобы помочь
+                        участникам в отладке их решений. Поэтому песочница:
+                        <ul>
+                            <li>не является частью задания или его условия;</li>
+                            <li>не обязательна к использованию;</li>
+                            <li>не имеет отношения к тестам на которых будет тестироваться ваше решение;</li>
+                            <li>может содержать ошибки, работать некорректно или не работать в вашем браузере.</li>
+                        </ul>
+                    </p>
+                    <p>
+                        Любой результат полученный здесь не гарантирует успешное
+                        прохождение тестов в контесте и не будет рассматриваться при выставлении баллов.
+                    </p>
+                    <p>
+                        Пожалуйста, в первую очередь, руководствуйтесь описанием
+                        задания и результатами тестов только с официальной страницы контеста.
+                    </p>
+                </div>
+            </p>
+        </header>
+    `;
+
+    const Preview = (state) => {
+        const input = getInput(state.inputContent);
+        const result = getSolutionResult(input, state.codeContent);
+        const isValid = isValidResult(result);
+        return html`
+            <main>
+                <div class="expected">
+                    <h2>Ожидаемый результат</h2>
+                    <div class="preview">
+                        ${input ? ExpectedElement(input) : nothing}
+                    </div>
+                    <b>Вывод</b>
+                    <pre class="output"><code>${calcExpectedCoordinates(input)}</code></pre>
+                </div>
+                <div class="result">
+                    <h2>Ваш результат</h2>
+                    <div class="preview">
+                        ${isValid ? result.map(geometry => ResultElement(geometry)) : nothing}
+                    </div>
+                    <b>Вывод</b>
+                    <pre class="output"><code>${JSON.stringify(result, null, 2)}</code></pre>
+                </div>
+            </main>
+        `;
+    };
+
+    const Editor = (state) => html`
+        <div class="editor">
+            ${state.editor ? html`
+                <div class="editor__tabs">
+                    ${Tab({
+                        id: state.codeModel.id,
+                        title: 'Код решения',
+                        extension: '.js',
+                        active: state.activeTabId === state.codeModel.id
+                    })}
+                    ${Tab({
+                        id: state.inputModel.id,
+                        title: 'Входные данные',
+                        extension: '.json',
+                        active: state.activeTabId === state.inputModel.id
+                    })}
+                </div>
+            ` : (
+                nothing
+            )}
+            <div id="editor-container"></div>
+        </div>
+    `;
+
+    const App = (state) => html`
+        <div class="root">
+            ${Header()}
+            ${Preview(state)}
+            <div class="hint">
+                * Обратите внимание, что цветные границы элементов присутствуют, только
+                для наглядности и не учитываются алгоритмом и тестами.
+            </div>
+            ${Editor(state)}
+            <footer>
+                <a class="footer__link" href="https://yandex.ru/cup/" target="_blank">
+                    Yandex Cup — чемпионат по программированию
+                </a>
+            </footer>
+        </div>
+    `;
+
+    require(['vs/editor/editor.main'], function init() {
+        const container = document.getElementById('editor-container');
+        if (!container) {
+            setTimeout(init, 1000);
+            return;
+        }
+        const editorInstance = monaco.editor.create(container, {});
+
+        const inputModel = monaco.editor.createModel(
+            localStorage.getItem('input-file-content') || inputPlaceholder,
+            'json'
+        );
+        editorInstance.setModel(inputModel)
+        const inputModelState = editorInstance.saveViewState();
+
+        inputModel.onDidChangeContent(() => {
+            const value = inputModel.getValue();
+            localStorage.setItem('input-file-content', value);
+            apply({
+                inputContent: value
+            });
+        })
+
+        const codeModel = monaco.editor.createModel(
+            localStorage.getItem('code-file-content') || codePlaceholder.trim().replace(/^\s{8}/gm, ''),
+            'javascript'
+        );
+        editorInstance.setModel(codeModel)
+        const codeModelState = editorInstance.saveViewState();
+
+        codeModel.onDidChangeContent(() => {
+            const value = codeModel.getValue();
+            localStorage.setItem('code-file-content', value);
+            apply({
+                codeContent: value
+            });
+        })
+
+        apply({
+            editor: editorInstance,
+            codeModel,
+            codeModelState,
+            codeContent: codeModel.getValue(),
+            inputModel,
+            inputModelState,
+            inputContent: inputModel.getValue(),
+            activeTabId: codeModel.id
+        });
+    });
+
+    apply();
+</script>
+<script nomodule>
+    const appEl = document.querySelector('#app');
+    if (appEl) {
+        appEl.innerHTML =
+            "К сожалению, ваш браузер не поддерживает синтаксис модулей. " +
+            "Для корректной работы этой песочницы требуется современный браузер, например, Google Chrome последней версии." +
+            "Данная песочница предоставлена исключительно в ознакомительных целях, чтобы помочь " +
+            "участникам в отладке их решений. Поэтому песочница: " +
+            "не является частью задания или его условия; " +
+            "не обязательна к использованию; " +
+            "не имеет отношения к тестам на которых будет тестироваться ваше решение; " +
+            "может содержать ошибки, работать некорректно или не работать в вашем браузере. ";
+    }
+</script>
+</body>
+
+</html>

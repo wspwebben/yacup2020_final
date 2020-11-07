@@ -9,10 +9,10 @@ import {
 
 
 // toggle to switch from testOne to testEvery
-// disableTestingEveryInput(); 
+disableTestingEveryInput(); 
 
 // disable logging test witch happened to pass
-disableSuccessLogs();
+// disableSuccessLogs();
 
 
 // ***

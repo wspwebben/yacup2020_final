@@ -1,21 +1,47 @@
-import { input, output } from './data';
+async function getCoordinates(dron) {
+  const [top, left, right, bottom] = Promise.all([
+    dron.top(),
+    dron.left(),
+    dron.right(),
+    dron.bottom(),
+  ]);
 
-import {
-  testFactory,
-  // SETTINGS
-  disableSuccessLogs,
-  disableTestingEveryInput
-} from './test';
+  return {
+    top,
+    left,
+    right,
+    bottom,
+  };
+}
 
+function compareCoordinates(info) {
+  return function (coordinates) {
+    return (
+      info.top === coordinates.top &&
+      info.left === coordinates.left &&
+      info.right === coordinates.right &&
+      info.bottom === coordinates.bottom
+    );
+  };
+}
 
-// toggle to switch from testOne to testEvery
-// disableTestingEveryInput(); 
+async function solution(dron, info, size) {
+  const { top, left, right, bottom } = info;
+  const compareWithInfo = compareCoordinates(info);
+  // start from 1, since 0,0 is dron's lo
+  for (let y = top; y <= size - bottom; y += 1) {
+    for (let x = left; x <= size - right; x += 1) {
+      if (x == 0 && y == 0) continue;
 
-// disable logging test witch happened to pass
-disableSuccessLogs();
+      const moved = await dron.move([x, y]);
+      if (moved) {
+        const coordinates = await getCoordinates(dron);
+        const isDownfall = compareWithInfo(coordinates);
 
+        if (isDownfall) return [x, y]
+      }
+    }
+  }
+}
 
-// ***
-
-const test = testFactory();
-test(input, output);
+module.exports = solution;
